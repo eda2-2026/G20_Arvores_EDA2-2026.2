@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Clínica{% endblock %} · Clínica Árvores</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="{{ url_for('painel') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M2 12h20" /></svg>
+      Clínica Árvores
+    </a>
+    {% set pagina = request.endpoint %}
+    <nav>
+      <a href="{{ url_for('painel') }}" class="{{ 'ativo' if pagina == 'painel' }}">Painel</a>
+      <a href="{{ url_for('pacientes') }}" class="{{ 'ativo' if pagina and 'paciente' in pagina }}">Pacientes</a>
+      <a href="{{ url_for('agenda') }}" class="{{ 'ativo' if pagina in ('agenda', 'novo_agendamento', 'remarcar') }}">Agenda</a>
+      <a href="{{ url_for('arvores') }}" class="{{ 'ativo' if pagina == 'arvores' }}">Árvores</a>
+      <a href="{{ url_for('laboratorio') }}" class="{{ 'ativo' if pagina == 'laboratorio' }}">Laboratório</a>
+    </nav>
+  </header>
+
+  <main class="conteudo">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, mensagem in mensagens %}
+        <div class="aviso aviso-{{ categoria }}" role="status">{{ mensagem }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+  </main>
+
+  <footer class="rodape">
+    EDA2 · Árvore AVL (pacientes) + Árvore Rubro-Negra (agenda) · {{ agora.strftime('%d/%m/%Y %H:%M') }}
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

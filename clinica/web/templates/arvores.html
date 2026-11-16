@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block titulo %}Árvores{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Índices em árvores</h1>
+  <a class="botao" href="{{ url_for('laboratorio') }}">Abrir laboratório →</a>
+</div>
+<p class="discreto">Estas são as árvores reais que guardam os dados da clínica. Passe o mouse sobre um nó para ver detalhes.</p>
+
+<div class="abas" role="tablist" id="seletor-indice">
+  {% for slug, nome in INDICES.items() %}
+    {% set s = estatisticas[loop.index0] %}
+    <button type="button" role="tab" data-indice="{{ slug }}" class="{{ 'ativa' if slug == selecionado }}">
+      {{ nome }} <span class="selo {{ 'selo-avl' if s.tipo == 'AVL' else 'selo-rn' }}">{{ 'AVL' if s.tipo == 'AVL' else 'RN' }}</span>
+    </button>
+  {% endfor %}
+</div>
+
+<section class="painel-bloco">
+  <div class="estatisticas-arvore" id="estatisticas">
+    <div><span class="rotulo">Tipo</span><strong data-campo="tipo">—</strong></div>
+    <div><span class="rotulo">Nós</span><strong data-campo="tamanho">—</strong></div>
+    <div><span class="rotulo">Altura</span><strong data-campo="altura">—</strong></div>
+    <div><span class="rotulo">Altura mínima possível</span><strong data-campo="minima">—</strong></div>
+    <div><span class="rotulo">Limite teórico</span><strong data-campo="limite">—</strong></div>
+    <div><span class="rotulo">Rotações</span><strong data-campo="rotacoes">—</strong></div>
+  </div>
+  <div class="barra-zoom">
+    <span class="legenda" id="legenda"></span>
+    <span class="espaco"></span>
+    <button type="button" class="botao botao-pequeno" data-zoom="-0.2" aria-label="Diminuir">−</button>
+    <button type="button" class="botao botao-pequeno" data-zoom="ajustar">Ajustar</button>
+    <button type="button" class="botao botao-pequeno" data-zoom="+0.2" aria-label="Aumentar">+</button>
+  </div>
+  <div class="quadro-arvore" id="quadro"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='arvore.js') }}"></script>
+<script>
+(function () {
+  const desenho = new DesenhoArvore(document.getElementById("quadro"));
+  const abas = document.querySelectorAll("#seletor-indice [data-indice]");
+  const campo = (nome) => document.querySelector(`[data-campo="${nome}"]`);
+  const LEGENDA = {
+    "AVL": "fb = fator de balanceamento (altura esq. − altura dir.), sempre −1, 0 ou +1. Nós com borda tracejada estão inclinados (fb ≠ 0).",
+    "Rubro-Negra": "Raiz preta · vermelho nunca tem filho vermelho · mesma quantidade de pretos em todo caminho até as folhas.",
+  };
+
+  const NOTAS = {
+    "nome": " A chave é (nome, CPF): o CPF desempata nomes iguais, mas o desenho mostra só o nome.",
+  };
+
+  async function carregar(slug) {
+    abas.forEach((b) => b.classList.toggle("ativa", b.dataset.indice === slug));
+    history.replaceState(null, "", `?indice=${slug}`);
+    const resposta = await fetch(`/api/arvores/${slug}`);
+    const dados = await resposta.json();
+    const n = dados.tamanho;
+    campo("tipo").textContent = dados.tipo;
+    campo("tamanho").textContent = n;
+    campo("altura").textContent = dados.altura;
+    campo("minima").textContent = n ? Math.ceil(Math.log2(n + 1)) : 0;
+    campo("limite").textContent = n
+      ? (dados.tipo === "AVL" ? `≤ ${(1.44 * Math.log2(n + 2)).toFixed(1)}` : `≤ ${(2 * Math.log2(n + 1)).toFixed(1)}`)
+      : "—";
+    campo("rotacoes").textContent = dados.rotacoes;
+    document.getElementById("legenda").textContent = LEGENDA[dados.tipo] + (NOTAS[slug] || "");
+    desenho.posicoes = new Map(); // trocar de índice não deve animar
+    desenho.desenhar(dados, { animar: false });
+    desenho.ajustar(0.55); // grande demais? fica legível e o quadro rola
+    if (desenho.zoom > 0.55) return;
+    // árvore grande: começa rolada até a raiz (centro horizontal)
+    const q = document.getElementById("quadro");
+    q.scrollLeft = (q.scrollWidth - q.clientWidth) / 2;
+  }
+
+  abas.forEach((b) => b.addEventListener("click", () => carregar(b.dataset.indice)));
+  document.querySelectorAll("[data-zoom]").forEach((b) => b.addEventListener("click", () => {
+    const z = b.dataset.zoom;
+    if (z === "ajustar") desenho.ajustar();
+    else desenho.definirZoom(desenho.zoom + parseFloat(z));
+  }));
+  carregar({{ selecionado | tojson }});
+})();
+</script>
+{% endblock %}

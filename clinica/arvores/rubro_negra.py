@@ -378,6 +378,26 @@ class ArvoreRubroNegra:
             visitar(self.raiz.esquerda, "", False)
         return "\n".join(linhas) if linhas else "(árvore vazia)"
 
+    def estrutura(self, formatar=str):
+        """Árvore como dicionários aninhados (para o front-end desenhar)."""
+        def montar(no):
+            if no is self.NIL:
+                return None
+            return {"chave": formatar(no.chave),
+                    "cor": "vermelho" if no.cor == VERMELHO else "preto",
+                    "esquerda": montar(no.esquerda), "direita": montar(no.direita)}
+        return montar(self.raiz)
+
+    def caminho_busca(self, chave):
+        """Chaves visitadas ao buscar `chave` (da raiz até onde a busca parou)."""
+        caminho, no = [], self.raiz
+        while no is not self.NIL:
+            caminho.append(no.chave)
+            if chave == no.chave:
+                break
+            no = no.esquerda if chave < no.chave else no.direita
+        return caminho
+
     def validar(self):
         """Verifica as 5 propriedades + ordem + ponteiros de pai."""
         assert self.NIL.cor == PRETO, "NIL deve ser preto"

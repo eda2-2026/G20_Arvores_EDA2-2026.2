@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tabela_pacientes, operacao_arvore, abas with context %}
+{% block titulo %}Pacientes{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Pacientes</h1>
+  <a class="botao botao-primario" href="{{ url_for('novo_paciente') }}">+ Novo paciente</a>
+</div>
+
+{{ abas([
+  ('alfabetica', 'Ordem alfabética'), ('nome', 'Nome'), ('cpf', 'CPF'), ('prontuario', 'Prontuário'),
+  ('intervalo_prontuario', 'Intervalo de prontuários'), ('intervalo_cpf', 'Intervalo de CPFs'),
+  ('criterios', 'Critérios'),
+], modo, 'pacientes') }}
+
+{% if modo != 'alfabetica' %}
+<form class="busca" method="get" action="{{ url_for('pacientes') }}">
+  <input type="hidden" name="modo" value="{{ modo }}">
+  {% if modo == 'nome' %}
+    <label>Nome começa com <input name="q" value="{{ args.q }}" autofocus placeholder="ex.: an"></label>
+  {% elif modo == 'cpf' %}
+    <label>CPF <input name="q" value="{{ args.q }}" autofocus placeholder="000.000.000-00" inputmode="numeric"></label>
+  {% elif modo == 'prontuario' %}
+    <label>Prontuário <input name="q" type="number" min="1" value="{{ args.q }}" autofocus></label>
+  {% elif modo == 'intervalo_prontuario' %}
+    <label>De <input name="inicio" type="number" min="1" value="{{ args.inicio or 1 }}"></label>
+    <label>Até <input name="fim" type="number" min="1" value="{{ args.fim or 10 }}"></label>
+  {% elif modo == 'intervalo_cpf' %}
+    <label>CPF inicial <input name="inicio" value="{{ args.inicio }}" placeholder="ex.: 100" inputmode="numeric"></label>
+    <label>CPF final <input name="fim" value="{{ args.fim }}" placeholder="ex.: 399" inputmode="numeric"></label>
+    <span class="dica">Pode digitar só o começo do CPF.</span>
+  {% elif modo == 'criterios' %}
+    <label>Idade mín. <input name="idade_min" type="number" min="0" value="{{ args.idade_min }}"></label>
+    <label>Idade máx. <input name="idade_max" type="number" min="0" value="{{ args.idade_max }}"></label>
+    <label>Convênio
+      <select name="convenio">
+        <option value="">Todos</option>
+        {% for conv in convenios %}<option {{ 'selected' if args.convenio == conv }}>{{ conv }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Nome contém <input name="nome_contem" value="{{ args.nome_contem }}"></label>
+  {% endif %}
+  <button class="botao botao-primario">Buscar</button>
+</form>
+{% endif %}
+
+{% if modo == 'alfabetica' or request.args | length > 1 %}
+  {{ operacao_arvore(operacao, tempo) }}
+  {{ tabela_pacientes(pacientes) }}
+{% endif %}
+{% endblock %}

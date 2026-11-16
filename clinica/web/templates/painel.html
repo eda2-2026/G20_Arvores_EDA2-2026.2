@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tabela_agendamentos with context %}
+{% block titulo %}Painel{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Painel</h1>
+  <div class="botoes">
+    <a class="botao" href="{{ url_for('novo_paciente') }}">+ Paciente</a>
+    <a class="botao botao-primario" href="{{ url_for('novo_agendamento') }}">+ Agendamento</a>
+  </div>
+</div>
+
+<section class="cartoes">
+  <a class="cartao" href="{{ url_for('pacientes') }}">
+    <span class="rotulo">Pacientes</span><strong>{{ total_pacientes }}</strong>
+  </a>
+  <a class="cartao" href="{{ url_for('agenda', modo='todos') }}">
+    <span class="rotulo">Agendamentos</span><strong>{{ total_agendamentos }}</strong>
+  </a>
+  <a class="cartao" href="{{ url_for('agenda', modo='dia') }}">
+    <span class="rotulo">Hoje ({{ hoje | data }})</span><strong>{{ hoje_lista | length }}</strong>
+  </a>
+</section>
+
+{% if total_pacientes == 0 %}
+<section class="painel-bloco destaque-vazio">
+  <h2>Sistema vazio</h2>
+  <p>Cadastre pacientes ou gere dados fictícios para explorar o sistema.</p>
+  <form method="post" action="{{ url_for('gerar_exemplo') }}" class="linha-form">
+    <label>Pacientes <input type="number" name="pacientes" value="40" min="1" max="2000"></label>
+    <label>Agendamentos <input type="number" name="agendamentos" value="80" min="0" max="4000"></label>
+    <button class="botao botao-primario">Gerar dados de exemplo</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="painel-bloco">
+  <div class="cabecalho-bloco">
+    <h2>Próximos atendimentos</h2>
+    <a href="{{ url_for('agenda') }}">ver agenda →</a>
+  </div>
+  <p class="discreto">Rubro-Negra por horário → <code>proximos(agora, 8)</code>, custo O(log n + k).</p>
+  {{ tabela_agendamentos(proximos) }}
+</section>
+
+<section class="painel-bloco">
+  <div class="cabecalho-bloco">
+    <h2>Índices em árvores</h2>
+    <a href="{{ url_for('arvores') }}">visualizar →</a>
+  </div>
+  <div class="tabela-rolagem">
+  <table>
+    <thead><tr><th>Índice</th><th>Tipo</th><th class="num">Nós</th><th class="num">Altura</th><th class="num">Rotações</th></tr></thead>
+    <tbody>
+    {% for s in estatisticas %}
+      <tr>
+        <td>{{ s.indice }}</td>
+        <td><span class="selo {{ 'selo-avl' if s.tipo == 'AVL' else 'selo-rn' }}">{{ s.tipo }}</span></td>
+        <td class="num">{{ s.tamanho }}</td><td class="num">{{ s.altura }}</td><td class="num">{{ s.rotacoes }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="discreto">Rotações contadas desde que o servidor iniciou (as árvores são reconstruídas a partir do JSON).</p>
+  {% if total_pacientes %}
+  <details class="mais">
+    <summary>Gerar mais dados de exemplo</summary>
+    <form method="post" action="{{ url_for('gerar_exemplo') }}" class="linha-form">
+      <label>Pacientes <input type="number" name="pacientes" value="30" min="0" max="2000"></label>
+      <label>Agendamentos <input type="number" name="agendamentos" value="60" min="0" max="4000"></label>
+      <button class="botao">Gerar</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endblock %}

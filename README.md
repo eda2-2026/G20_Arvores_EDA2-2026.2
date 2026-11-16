@@ -7,20 +7,40 @@ em Python puro (sem bibliotecas externas).
 ## Requisitos
 
 - Python 3.10+
+- Flask (só para o front-end web)
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
 
 ## Como executar
 
+**Front-end web** (recomendado):
+
 ```bash
-python3 -m clinica                     # menu no terminal (dados em dados/clinica.json)
+.venv/bin/python -m clinica.web        # abra http://127.0.0.1:5000
+```
+
+Páginas: Painel, Pacientes (7 modos de busca, cada um mostrando a operação
+de árvore usada e o tempo medido), Agenda, Árvores (desenho dos 7 índices
+reais) e **Laboratório** (AVL × Rubro-Negra lado a lado, com animação das
+rotações). Se o sistema estiver vazio, o painel oferece gerar dados de exemplo.
+
+**Menu no terminal** (não precisa de Flask):
+
+```bash
+python3 -m clinica                     # dados em dados/clinica.json
 python3 -m clinica --arquivo outro.json
 ```
 
-Use a opção **19 — Gerar dados de exemplo** para popular o sistema rapidamente.
+Os dois usam o mesmo arquivo `dados/clinica.json`, mas não rode os dois ao
+mesmo tempo (cada um sobrescreve o arquivo ao salvar).
 
 ## Testes e demonstrações
 
 ```bash
-python3 -m unittest -v           # todos os testes
+.venv/bin/python -m unittest -v  # todos os testes (os do front exigem Flask)
 python3 -m demos.demo_avl        # AVL: inserção ordenada e rotações
 python3 -m demos.demo_rubro_negra # Rubro-Negra + comparação AVL x RN
 python3 -m demos.demo_clinica    # serviço completo
@@ -37,6 +57,7 @@ clinica/
   persistencia.py         Salvar/carregar em JSON
   dados_exemplo.py        Gerador de dados fictícios
   cli.py                  Menu no terminal
+  web/                    Front-end Flask (app.py, templates/, static/)
 tests/                    Testes unitários (unittest)
 demos/                    Scripts de demonstração
 ```

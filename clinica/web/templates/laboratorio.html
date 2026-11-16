@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block titulo %}Laboratório{% endblock %}
+{% block conteudo %}
+<h1>Laboratório: AVL × Rubro-Negra</h1>
+<p class="discreto">Cada operação é aplicada às <strong>duas</strong> árvores ao mesmo tempo, com chaves inteiras.
+Os nós deslizam para a nova posição, então dá para ver as rotações acontecendo.
+Estas árvores são independentes dos dados da clínica.</p>
+
+<section class="painel-bloco controles-lab">
+  <form id="form-lab" class="linha-form" autocomplete="off">
+    <label>Chave <input id="chave" type="number" required autofocus placeholder="ex.: 42"></label>
+    <button class="botao botao-primario" data-acao="inserir">Inserir</button>
+    <button class="botao" data-acao="remover">Remover</button>
+    <button class="botao" data-acao="buscar">Buscar</button>
+  </form>
+  <div class="linha-form">
+    <label>Quantidade <input id="quantidade" type="number" value="15" min="1" max="{{ limite }}"></label>
+    <button type="button" class="botao" data-preset="ordem">Inserir 1…N em ordem</button>
+    <button type="button" class="botao" data-preset="aleatorio">N aleatórios</button>
+    <button type="button" class="botao botao-perigo" data-preset="limpar">Limpar</button>
+  </div>
+  <p id="mensagem" class="mensagem-lab" aria-live="polite"></p>
+</section>
+
+<div class="lado-a-lado">
+  {% for tipo, titulo in [('avl', 'AVL'), ('rn', 'Rubro-Negra')] %}
+  <section class="painel-bloco painel-lab" data-tipo="{{ tipo }}">
+    <div class="cabecalho-bloco">
+      <h2><span class="selo {{ 'selo-avl' if tipo == 'avl' else 'selo-rn' }}">{{ titulo }}</span></h2>
+      <span class="rotacoes-op" data-campo="op"></span>
+    </div>
+    <div class="estatisticas-arvore compacta">
+      <div><span class="rotulo">Nós</span><strong data-campo="tamanho">0</strong></div>
+      <div><span class="rotulo">Altura</span><strong data-campo="altura">0</strong></div>
+      <div><span class="rotulo">Rotações (total)</span><strong data-campo="rotacoes">0</strong></div>
+    </div>
+    <div class="quadro-arvore quadro-lab"></div>
+  </section>
+  {% endfor %}
+</div>
+
+<section class="painel-bloco">
+  <h2>Histórico</h2>
+  <ol id="historico" class="historico" reversed></ol>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='arvore.js') }}"></script>
+<script>
+(function () {
+  const LIMITE = {{ limite }};
+  const paineis = {};
+  document.querySelectorAll(".painel-lab").forEach((p) => {
+    paineis[p.dataset.tipo] = { el: p, desenho: new DesenhoArvore(p.querySelector(".quadro-lab")) };
+  });
+  const mensagem = document.getElementById("mensagem");
+  const historico = document.getElementById("historico");
+  const entradaChave = document.getElementById("chave");
+
+  function atualizar(tipo, dados, animar = true) {
+    const { el, desenho } = paineis[tipo];
+    el.querySelector('[data-campo="tamanho"]').textContent = dados.tamanho;
+    el.querySelector('[data-campo="altura"]').textContent = dados.altura;
+    el.querySelector('[data-campo="rotacoes"]').textContent = dados.rotacoes;
+    const op = el.querySelector('[data-campo="op"]');
+    if (dados.rotacoes_operacao !== undefined) {
+      const r = dados.rotacoes_operacao;
+      op.textContent = `${r} ${r === 1 ? "rotação" : "rotações"} nesta operação`;
+      op.classList.toggle("houve", r > 0);
+    } else {
+      op.textContent = "";
+    }
+    desenho.desenhar(dados, { destaque: dados.destaque, caminho: dados.caminho || [], animar });
+    if (dados.tamanho > 20) desenho.ajustar(); else desenho.definirZoom(1);
+  }
+
+  async function enviar(corpo, rotulo) {
+    const respostas = await Promise.all(["avl", "rn"].map((tipo) =>
+      fetch(`/api/lab/${tipo}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      }).then((r) => r.json())));
+    const [avl, rn] = respostas;
+    atualizar("avl", avl);
+    atualizar("rn", rn);
+    mensagem.textContent = avl.mensagem;
+    mensagem.classList.toggle("erro", avl.erro);
+    if (!avl.erro && rotulo) {
+      const item = document.createElement("li");
+      item.textContent = `${rotulo} → AVL: ${avl.rotacoes_operacao} rot., altura ${avl.altura} · ` +
+                         `RN: ${rn.rotacoes_operacao} rot., altura ${rn.altura}`;
+      historico.prepend(item);
+    }
+  }
+
+  document.getElementById("form-lab").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const acao = (e.submitter && e.submitter.dataset.acao) || "inserir";
+    const chave = entradaChave.value;
+    if (chave === "") return;
+    enviar({ acao, chave }, `${acao} ${chave}`);
+    entradaChave.select();
+  });
+
+  document.querySelectorAll("[data-preset]").forEach((botao) => botao.addEventListener("click", () => {
+    const n = Math.max(1, Math.min(LIMITE, parseInt(document.getElementById("quantidade").value, 10) || 15));
+    const preset = botao.dataset.preset;
+    if (preset === "limpar") {
+      enviar({ acao: "limpar" });
+      historico.replaceChildren();
+      return;
+    }
+    let chaves;
+    if (preset === "ordem") {
+      chaves = Array.from({ length: n }, (_, i) => i + 1);
+    } else {
+      const pool = Array.from({ length: 99 }, (_, i) => i + 1);
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      chaves = pool.slice(0, Math.min(n, 99));
+    }
+    Object.values(paineis).forEach((p) => (p.desenho.posicoes = new Map()));
+    enviar({ acao: "carregar", chaves },
+           `${preset === "ordem" ? "em ordem" : "aleatórios"}: ${chaves.join(", ")}`);
+  }));
+
+  // estado inicial (o servidor mantém as árvores enquanto estiver rodando)
+  ["avl", "rn"].forEach((tipo) =>
+    fetch(`/api/lab/${tipo}`).then((r) => r.json()).then((d) => atualizar(tipo, d, false)));
+})();
+</script>
+{% endblock %}

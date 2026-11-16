@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tabela_agendamentos, operacao_arvore, abas with context %}
+{% block titulo %}Agenda{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <h1>Agenda</h1>
+  <a class="botao botao-primario" href="{{ url_for('novo_agendamento') }}">+ Novo agendamento</a>
+</div>
+
+{{ abas([('proximos', 'Próximos'), ('dia', 'Dia'), ('intervalo', 'Intervalo'), ('todos', 'Todos')], modo, 'agenda') }}
+
+{% if modo != 'todos' %}
+<form class="busca" method="get" action="{{ url_for('agenda') }}">
+  <input type="hidden" name="modo" value="{{ modo }}">
+  {% if modo == 'proximos' %}
+    <label>Quantidade <input name="quantidade" type="number" min="1" max="500" value="{{ args.quantidade or 10 }}"></label>
+  {% elif modo == 'dia' %}
+    <label>Dia <input name="dia" type="date" value="{{ args.dia or hoje.isoformat() }}"></label>
+  {% elif modo == 'intervalo' %}
+    <label>De <input name="inicio" type="datetime-local" value="{{ args.inicio or (hoje.isoformat() ~ 'T08:00') }}"></label>
+    <label>Até <input name="fim" type="datetime-local" value="{{ args.fim or (hoje.isoformat() ~ 'T12:00') }}"></label>
+  {% endif %}
+  {% if modo in ('proximos', 'dia') %}
+  <label>Profissional
+    <select name="profissional">
+      <option value="">Todos</option>
+      {% for prof in profissionais %}<option {{ 'selected' if args.profissional == prof }}>{{ prof }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <button class="botao botao-primario">Filtrar</button>
+</form>
+{% endif %}
+
+{% if navegacao %}
+  <nav class="navega-dia">
+    <a class="botao botao-pequeno" href="{{ url_for('agenda', modo='dia', dia=navegacao.anterior.isoformat(), profissional=args.profissional) }}">← {{ navegacao.anterior | data }}</a>
+    <strong>{{ navegacao.dia | data }}</strong>
+    <a class="botao botao-pequeno" href="{{ url_for('agenda', modo='dia', dia=navegacao.seguinte.isoformat(), profissional=args.profissional) }}">{{ navegacao.seguinte | data }} →</a>
+  </nav>
+{% endif %}
+
+{{ operacao_arvore(operacao, tempo) }}
+{{ tabela_agendamentos(agendamentos) }}
+{% endblock %}

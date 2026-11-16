@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}{{ 'Remarcar' if ag else 'Novo agendamento' }}{% endblock %}
+{% block conteudo %}
+<p class="migalha"><a href="{{ url_for('agenda') }}">← Agenda</a></p>
+<h1>{{ 'Remarcar agendamento #' ~ ag.id if ag else 'Novo agendamento' }}</h1>
+
+{% if not pacientes %}
+  <p class="vazio">Cadastre um paciente antes de agendar. <a href="{{ url_for('novo_paciente') }}">Novo paciente →</a></p>
+{% else %}
+<form method="post" class="formulario painel-bloco">
+  {% if ag %}
+    {% set p = paciente_de(ag) %}
+    <div class="ficha-curta">
+      <span><strong>Paciente:</strong> {{ p.nome if p }}</span>
+      <span><strong>Profissional:</strong> {{ ag.profissional }}</span>
+      <span><strong>Atual:</strong> {{ ag.data_hora | data }} {{ ag.data_hora | hora }}–{{ ag.fim | hora }}</span>
+    </div>
+  {% else %}
+    <label>Paciente
+      <input name="cpf" list="lista-pacientes" value="{{ form.cpf }}" required autofocus
+             placeholder="Digite o nome ou CPF" autocomplete="off">
+      <datalist id="lista-pacientes">
+        {% for p in pacientes %}<option value="{{ p.cpf | cpf }}">{{ p.nome }}</option>{% endfor %}
+      </datalist>
+      <span class="dica">Escolha da lista: o valor enviado é o CPF.</span>
+    </label>
+    <label>Profissional
+      <input name="profissional" list="lista-profissionais" value="{{ form.profissional }}" required minlength="2">
+      <datalist id="lista-profissionais">
+        {% for prof in profissionais %}<option value="{{ prof }}">{% endfor %}
+      </datalist>
+    </label>
+  {% endif %}
+  <div class="linha-campos">
+    <label>Data <input name="data" type="date" value="{{ form.data }}" required min="{{ hoje.isoformat() }}"></label>
+    <label>Horário <input name="hora" type="time" value="{{ form.hora }}" required step="300"></label>
+    <label>Duração (min)
+      <input name="duracao_min" type="number" value="{{ form.duracao_min or 30 }}" min="5" max="{{ duracao_maxima }}" step="5" required>
+    </label>
+  </div>
+  {% if not ag %}
+  <label>Observação <input name="observacao" value="{{ form.observacao }}" placeholder="Retorno, primeira consulta…"></label>
+  {% endif %}
+  <p class="dica">Conflitos são checados com uma busca por intervalo na Rubro-Negra
+     (janela de {{ duracao_maxima }} min antes do início): um profissional ou paciente
+     não pode ter dois atendimentos sobrepostos.</p>
+  <div class="botoes">
+    <button class="botao botao-primario">{{ 'Remarcar' if ag else 'Agendar' }}</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

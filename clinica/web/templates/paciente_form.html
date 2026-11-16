@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titulo %}{{ 'Editar paciente' if editar else 'Novo paciente' }}{% endblock %}
+{% block conteudo %}
+<p class="migalha">
+  {% if editar %}<a href="{{ url_for('ver_paciente', cpf=p.cpf) }}">← {{ p.nome }}</a>
+  {% else %}<a href="{{ url_for('pacientes') }}">← Pacientes</a>{% endif %}
+</p>
+<h1>{{ 'Editar paciente' if editar else 'Novo paciente' }}</h1>
+
+<form method="post" class="formulario painel-bloco">
+  <label>CPF
+    <input name="cpf" value="{{ form.cpf }}" required placeholder="000.000.000-00" inputmode="numeric"
+           {{ 'readonly' if editar else 'autofocus' }}>
+    {% if editar %}<span class="dica">CPF é a chave da árvore e não pode ser alterado.</span>{% endif %}
+  </label>
+  <label>Nome completo
+    <input name="nome" value="{{ form.nome }}" required minlength="2" {{ 'autofocus' if editar }}>
+  </label>
+  <label>Data de nascimento
+    <input name="data_nascimento" type="date" value="{{ form.data_nascimento }}" required max="{{ hoje.isoformat() }}">
+  </label>
+  <label>Telefone <input name="telefone" value="{{ form.telefone }}" placeholder="(61) 99999-9999" inputmode="tel"></label>
+  <label>E-mail <input name="email" type="email" value="{{ form.email }}"></label>
+  <label>Convênio <input name="convenio" value="{{ form.convenio }}" placeholder="Particular, Unimed…"></label>
+  <div class="botoes">
+    <button class="botao botao-primario">{{ 'Salvar' if editar else 'Cadastrar' }}</button>
+  </div>
+</form>
+{% endblock %}

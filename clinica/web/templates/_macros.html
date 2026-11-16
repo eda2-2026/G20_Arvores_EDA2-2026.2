@@ -1,0 +1,87 @@
+{# Componentes reutilizados pelas páginas #}
+
+{% macro tabela_pacientes(pacientes) %}
+  {% if pacientes %}
+  <div class="tabela-rolagem">
+  <table>
+    <thead><tr><th class="num">Pront.</th><th>Nome</th><th>CPF</th><th class="num">Idade</th><th>Convênio</th><th>Telefone</th></tr></thead>
+    <tbody>
+    {% for p in pacientes %}
+      <tr>
+        <td class="num">{{ p.prontuario }}</td>
+        <td><a href="{{ url_for('ver_paciente', cpf=p.cpf) }}">{{ p.nome }}</a></td>
+        <td class="mono">{{ p.cpf | cpf }}</td>
+        <td class="num">{{ p.idade(hoje) }}</td>
+        <td>{{ p.convenio or '—' }}</td>
+        <td class="mono">{{ p.telefone or '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="discreto">{{ pacientes | length }} paciente(s)</p>
+  {% else %}
+  <p class="vazio">Nenhum paciente encontrado.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro tabela_agendamentos(agendamentos, mostrar_paciente=true, voltar=none) %}
+  {% if agendamentos %}
+  <div class="tabela-rolagem">
+  <table>
+    <thead><tr>
+      <th class="num">#</th><th>Data</th><th>Horário</th><th>Profissional</th>
+      {% if mostrar_paciente %}<th>Paciente</th>{% endif %}
+      <th>Observação</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for ag in agendamentos %}
+      {% set passado = ag.data_hora < agora %}
+      <tr class="{{ 'passado' if passado }}">
+        <td class="num">{{ ag.id }}</td>
+        <td>{{ ag.data_hora | data }}</td>
+        <td class="mono">{{ ag.data_hora | hora }}–{{ ag.fim | hora }}</td>
+        <td>{{ ag.profissional }}</td>
+        {% if mostrar_paciente %}
+          {% set p = paciente_de(ag) %}
+          <td>{% if p %}<a href="{{ url_for('ver_paciente', cpf=p.cpf) }}">{{ p.nome }}</a>{% endif %}</td>
+        {% endif %}
+        <td>{{ ag.observacao or '' }}</td>
+        <td class="acoes">
+          {% if not passado %}
+          <a class="botao botao-pequeno" href="{{ url_for('remarcar', id_ag=ag.id) }}">Remarcar</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('cancelar', id_ag=ag.id) }}"
+                onsubmit="return confirm('Cancelar o agendamento #{{ ag.id }}?')">
+            <input type="hidden" name="voltar" value="{{ voltar or request.full_path }}">
+            <button class="botao botao-pequeno botao-perigo">Cancelar</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="discreto">{{ agendamentos | length }} agendamento(s)</p>
+  {% else %}
+  <p class="vazio">Nenhum agendamento encontrado.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro operacao_arvore(operacao, tempo) %}
+  {% if operacao %}
+  <div class="operacao">
+    <span class="rotulo">Operação na árvore</span>
+    <code>{{ operacao }}</code>
+    {% if tempo is not none %}<span class="tempo">{{ '%.1f' | format(tempo) }} µs</span>{% endif %}
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro abas(itens, ativo, endpoint) %}
+  <div class="abas" role="tablist">
+    {% for chave, rotulo in itens %}
+      <a role="tab" href="{{ url_for(endpoint, modo=chave) }}" class="{{ 'ativa' if chave == ativo }}">{{ rotulo }}</a>
+    {% endfor %}
+  </div>
+{% endmacro %}

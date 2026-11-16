@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tabela_agendamentos with context %}
+{% block titulo %}{{ p.nome }}{% endblock %}
+{% block conteudo %}
+<p class="migalha"><a href="{{ url_for('pacientes') }}">← Pacientes</a></p>
+<div class="cabecalho">
+  <h1>{{ p.nome }}</h1>
+  <div class="botoes">
+    <a class="botao" href="{{ url_for('editar_paciente', cpf=p.cpf) }}">Editar</a>
+    <a class="botao botao-primario" href="{{ url_for('novo_agendamento', cpf=p.cpf) }}">+ Agendar</a>
+  </div>
+</div>
+
+<section class="painel-bloco">
+  <dl class="ficha">
+    <div><dt>Prontuário</dt><dd>{{ p.prontuario }}</dd></div>
+    <div><dt>CPF</dt><dd class="mono">{{ p.cpf | cpf }}</dd></div>
+    <div><dt>Nascimento</dt><dd>{{ p.data_nascimento | data }} ({{ p.idade(hoje) }} anos)</dd></div>
+    <div><dt>Telefone</dt><dd class="mono">{{ p.telefone or '—' }}</dd></div>
+    <div><dt>E-mail</dt><dd>{{ p.email or '—' }}</dd></div>
+    <div><dt>Convênio</dt><dd>{{ p.convenio or '—' }}</dd></div>
+  </dl>
+</section>
+
+<section class="painel-bloco">
+  <h2>Agendamentos</h2>
+  <p class="discreto">Rubro-Negra por paciente → <code>intervalo((cpf,), (cpf, max))</code>, custo O(log n + k).</p>
+  {{ tabela_agendamentos(agendamentos, mostrar_paciente=false) }}
+</section>
+
+<section class="painel-bloco zona-perigo">
+  <h2>Remover paciente</h2>
+  <p>Remove o paciente dos 3 índices AVL e cancela os agendamentos dele{% if agendamentos %} ({{ agendamentos | length }}){% endif %}.</p>
+  <form method="post" action="{{ url_for('remover_paciente', cpf=p.cpf) }}"
+        onsubmit="return confirm('Remover {{ p.nome }} e todos os seus agendamentos?')">
+    <button class="botao botao-perigo">Remover paciente</button>
+  </form>
+</section>
+{% endblock %}
