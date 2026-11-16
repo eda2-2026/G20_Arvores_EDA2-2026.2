@@ -89,9 +89,26 @@ mais curtas). A agenda muda o tempo todo → Rubro-Negra (menos rotações).
 
 ## Screenshots (demonstração)
 
-### Tela principal
+### Painel
 
-![Interface principal]()
+Visão geral com totais e os próximos atendimentos, obtidos da Rubro-Negra por
+horário com `proximos(agora, 8)` em O(log n + k).
+
+![Painel com os próximos atendimentos](prints/Captura%20de%20Tela%20%2873%29.png)
+
+### Pacientes
+
+Sete modos de busca nos índices AVL: ordem alfabética, prefixo do nome, CPF,
+prontuário, intervalo de prontuários, intervalo de CPFs e critérios.
+
+![Busca de pacientes por nome](prints/Captura%20de%20Tela%20%2874%29.png)
+
+### Índices em árvores
+
+Desenho da árvore real de um índice (aqui, a AVL de pacientes por CPF), com o
+fator de balanceamento de cada nó, a altura e o número de rotações.
+
+![AVL de pacientes por CPF](prints/Captura%20de%20Tela%20%2875%29.png)
 
 ## Vídeo (demonstração)
 
