@@ -1,5 +1,14 @@
 # G20 — Árvores (EDA2 2026.2)
 
+
+**Trabalho 3 — Árvores** · Disciplina: **Estrutura de Dados 2 (2026.2)** · Equipe **G20**
+
+| Matrícula | Nome completo |
+| :-------: | :------------ |
+| 232037937 | Italo Alves Sampaio de Oliveira |
+| 221008202 | José Eduardo Vieira do Prado |
+
+
 Sistema de gerenciamento de pacientes e agendamentos para clínicas, usando
 **Árvore AVL** (pacientes) e **Árvore Rubro-Negra** (agenda), implementadas do zero
 em Python puro (sem bibliotecas externas).
@@ -76,3 +85,14 @@ demos/                    Scripts de demonstração
 
 Pacientes são muito consultados e pouco alterados → AVL (mais baixa, buscas
 mais curtas). A agenda muda o tempo todo → Rubro-Negra (menos rotações).
+
+
+## Screenshots (demonstração)
+
+### Tela principal
+
+![Interface principal]()
+
+## Vídeo (demonstração)
+
+[Apresentação G20 - Busca 2026.2](https://youtu.be/rfAs2Bd7gYo)
