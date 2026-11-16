@@ -55,12 +55,35 @@ def _validar_nome(nome, campo="Nome"):
     return nome
 
 
+def converter_data(texto):
+    """'2026-11-16' ou '16/11/2026' -> date. Retorna None se inválida."""
+    texto = str(texto).strip()
+    for formato in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(texto, formato).date()
+        except ValueError:
+            pass
+    return None
+
+
+def converter_data_hora(texto):
+    """'2026-11-16 09:30', '2026-11-16T09:30' ou '16/11/2026 09:30' -> datetime."""
+    texto = str(texto).strip()
+    try:
+        return datetime.fromisoformat(texto)
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(texto, "%d/%m/%Y %H:%M")
+    except ValueError:
+        return None
+
+
 def _validar_data_nascimento(valor, hoje):
     if isinstance(valor, str):
-        try:
-            valor = date.fromisoformat(valor)
-        except ValueError:
-            raise DadosInvalidos(f"Data de nascimento inválida: {valor} (use AAAA-MM-DD)")
+        texto, valor = valor, converter_data(valor)
+        if valor is None:
+            raise DadosInvalidos(f"Data de nascimento inválida: {texto} (use DD/MM/AAAA)")
     if isinstance(valor, datetime):
         valor = valor.date()
     if not isinstance(valor, date):
@@ -88,10 +111,9 @@ def _validar_telefone(telefone):
 
 def _validar_data_hora(valor):
     if isinstance(valor, str):
-        try:
-            valor = datetime.fromisoformat(valor)
-        except ValueError:
-            raise DadosInvalidos(f"Data/hora inválida: {valor} (use AAAA-MM-DD HH:MM)")
+        texto, valor = valor, converter_data_hora(valor)
+        if valor is None:
+            raise DadosInvalidos(f"Data/hora inválida: {texto} (use DD/MM/AAAA HH:MM)")
     if not isinstance(valor, datetime):
         raise DadosInvalidos("Data/hora é obrigatória.")
     return valor.replace(second=0, microsecond=0)

@@ -26,3 +26,7 @@ class AgendamentoNaoEncontrado(ErroClinica, KeyError):
 
 class ConflitoDeHorario(ErroClinica):
     pass
+
+
+class ErroPersistencia(ErroClinica):
+    pass

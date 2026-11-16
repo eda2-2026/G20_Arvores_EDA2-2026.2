@@ -231,8 +231,9 @@ class ArvoreAVL:
     # ------------------------------------------------------------------ #
     # Depuração / apresentação
     # ------------------------------------------------------------------ #
-    def desenhar(self):
-        """Desenho textual da árvore (deitada: raiz à esquerda, direita em cima)."""
+    def desenhar(self, formatar=str):
+        """Desenho textual da árvore (deitada: raiz à esquerda, direita em cima).
+        `formatar` converte a chave em texto."""
         linhas = []
 
         def visitar(no, prefixo, eh_direita):
@@ -240,12 +241,12 @@ class ArvoreAVL:
                 return
             visitar(no.direita, prefixo + ("    " if eh_direita else "│   "), True)
             conector = "┌── " if eh_direita else "└── "
-            linhas.append(f"{prefixo}{conector}{no.chave} (h={no.altura}, fb={self._fator(no)})")
+            linhas.append(f"{prefixo}{conector}{formatar(no.chave)} (h={no.altura}, fb={self._fator(no)})")
             visitar(no.esquerda, prefixo + ("│   " if eh_direita else "    "), False)
 
         if self.raiz:
             visitar(self.raiz.direita, "", True)
-            linhas.append(f"{self.raiz.chave} (h={self.raiz.altura}, fb={self._fator(self.raiz)})")
+            linhas.append(f"{formatar(self.raiz.chave)} (h={self.raiz.altura}, fb={self._fator(self.raiz)})")
             visitar(self.raiz.esquerda, "", False)
         return "\n".join(linhas) if linhas else "(árvore vazia)"
 

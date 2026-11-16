@@ -26,7 +26,7 @@ from .erros import (AgendamentoNaoEncontrado, ConflitoDeHorario, DadosInvalidos,
                     PacienteJaCadastrado, PacienteNaoEncontrado)
 from .modelos import (DURACAO_MAXIMA, Agendamento, Paciente, _validar_data_hora,
                       _validar_data_nascimento, _validar_duracao, _validar_email,
-                      _validar_nome, _validar_telefone, normalizar_texto, somente_digitos,
+                      _validar_nome, _validar_telefone, converter_data, normalizar_texto, somente_digitos,
                       validar_cpf)
 
 _CAMPOS_EDITAVEIS = {"nome", "data_nascimento", "telefone", "email", "convenio"}
@@ -182,6 +182,18 @@ class Clinica:
 
         return [p for _, p in self._por_nome.filtrar(atende)]
 
+    @property
+    def contadores(self):
+        """Próximos identificadores livres (salvos junto com os dados para que
+        prontuários/ids de registros removidos não sejam reutilizados)."""
+        return {"proximo_prontuario": self._proximo_prontuario,
+                "proximo_id_agendamento": self._proximo_id_agendamento}
+
+    def restaurar_contadores(self, proximo_prontuario, proximo_id_agendamento):
+        self._proximo_prontuario = max(self._proximo_prontuario, int(proximo_prontuario))
+        self._proximo_id_agendamento = max(self._proximo_id_agendamento,
+                                           int(proximo_id_agendamento))
+
     def total_pacientes(self):
         return len(self._por_cpf)
 
@@ -189,8 +201,13 @@ class Clinica:
     # AGENDAMENTOS
     # ================================================================== #
     def agendar(self, cpf, data_hora, profissional, duracao_min=30, observacao="",
-                permitir_passado=False):
+                permitir_passado=False, id_agendamento=None):
+        """`id_agendamento` só é informado ao recarregar dados salvos."""
         paciente = self.buscar_por_cpf(cpf)
+        if id_agendamento is None:
+            id_agendamento = self._proximo_id_agendamento
+        elif int(id_agendamento) in self._agenda_id:
+            raise DadosInvalidos(f"Agendamento {id_agendamento} já existe.")
         data_hora = _validar_data_hora(data_hora)
         duracao_min = _validar_duracao(duracao_min)
         profissional = _validar_nome(profissional, "Profissional")
@@ -198,7 +215,7 @@ class Clinica:
             raise DadosInvalidos("Não é possível agendar no passado.")
 
         agendamento = Agendamento(
-            id=self._proximo_id_agendamento,
+            id=int(id_agendamento),
             cpf_paciente=paciente.cpf,
             profissional=profissional,
             data_hora=data_hora,
@@ -207,7 +224,7 @@ class Clinica:
         )
         self._verificar_conflitos(agendamento)
         self._indexar_agendamento(agendamento)
-        self._proximo_id_agendamento += 1
+        self._proximo_id_agendamento = max(self._proximo_id_agendamento, agendamento.id + 1)
         return agendamento
 
     def cancelar_agendamento(self, id_agendamento):
@@ -262,7 +279,9 @@ class Clinica:
     def agenda_do_dia(self, dia=None, profissional=None):
         dia = dia or self.agora().date()
         if isinstance(dia, str):
-            dia = date.fromisoformat(dia)
+            texto, dia = dia, converter_data(dia)
+            if dia is None:
+                raise DadosInvalidos(f"Data inválida: {texto} (use DD/MM/AAAA)")
         inicio = datetime.combine(dia, datetime.min.time())
         if profissional is None:
             return self.agendamentos_no_intervalo(inicio, inicio + timedelta(days=1))
